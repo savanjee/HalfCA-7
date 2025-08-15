@@ -1,1 +1,146 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HalfCA</title>
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #000;
+  color: #fff;
+}
+header {
+  padding: 20px;
+  text-align: center;
+  background-color: #111;
+}
+header input {
+  padding: 10px;
+  width: 200px;
+  border: none;
+  border-radius: 5px;
+}
+header button {
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  background-color: #fff;
+  color: #000;
+  cursor: pointer;
+}
+#gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  padding: 20px;
+}
+.photo-card {
+  position: relative;
+}
+.photo-card img {
+  width: 100%;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+.photo-card img:hover {
+  transform: scale(1.05);
+  filter: brightness(1.2);
+}
+.photo-card a {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  padding: 5px;
+  background-color: rgba(255,255,255,0.7);
+  color: #000;
+  border-radius: 3px;
+  text-decoration: none;
+  font-size: 12px;
+}
+body.light {
+  background-color: #fff;
+  color: #000;
+}
+body.light header {
+  background-color: #eee;
+}
+body.light .photo-card a {
+  background-color: rgba(0,0,0,0.7);
+  color: #fff;
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>HalfCA</h1>
+  <input type="text" id="searchInput" placeholder="Search photos...">
+  <button id="searchBtn">Search</button>
+  <button id="toggleTheme">Light Mode</button>
+</header>
+<main id="gallery"></main>
+<script>
+const gallery = document.getElementById('gallery');
+const searchBtn = document.getElementById('searchBtn');
+const searchInput = document.getElementById('searchInput');
+const toggleBtn = document.getElementById('toggleTheme');
+
+const UNSPLASH_ACCESS_KEY = 'YOUR_UNSPLASH_ACCESS_KEY'; // <-- Replace this with your Unsplash API key
+const API_URL = 'https://api.unsplash.com';
+
+let page = 1;
+let queryText = '';
+
+async function fetchPhotos(query = '', page = 1){
+  let url = query 
+    ? `${API_URL}/search/photos?query=${query}&per_page=30&page=${page}&client_id=${UNSPLASH_ACCESS_KEY}`
+    : `${API_URL}/photos?per_page=30&page=${page}&client_id=${UNSPLASH_ACCESS_KEY}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  return query ? data.results : data;
+}
+
+async function displayPhotos(query = '', append = false){
+  if(!append) gallery.innerHTML = '<p>Loading...</p>';
+  const photos = await fetchPhotos(query, page);
+  if(!append) gallery.innerHTML = '';
+  photos.forEach(photo => {
+    const photoDiv = document.createElement('div');
+    photoDiv.className = 'photo-card';
+    photoDiv.innerHTML = `
+      <img src="${photo.urls.small}" alt="${photo.alt_description}">
+      <a href="${photo.links.download}" target="_blank">Download</a>
+    `;
+    gallery.appendChild(photoDiv);
+  });
+}
+
+window.addEventListener('scroll', ()=>{
+  if(window.innerHeight + window.scrollY >= document.body.offsetHeight - 100){
+    page++;
+    displayPhotos(queryText, true);
+  }
+});
+
+searchBtn.addEventListener('click', ()=>{
+  queryText = searchInput.value.trim();
+  page = 1;
+  displayPhotos(queryText,false);
+});
+
+toggleBtn.addEventListener('click', ()=>{
+  document.body.classList.toggle('light');
+  if(document.body.classList.contains('light')){
+    toggleBtn.textContent = 'Dark Mode';
+  } else {
+    toggleBtn.textContent = 'Light Mode';
+  }
+});
+
+displayPhotos();
+</script>
+</body>
+</html>
